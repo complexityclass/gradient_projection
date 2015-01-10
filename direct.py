@@ -85,32 +85,51 @@ class WaveEq(object):
 
 		res = reversed(res)
 
+		return list(res)
+
+
+	def discretezation(self, f, nt, nx):
+		res = np.zeros([nt, nx])
+		for t in range(nt):
+			for k in range(nx):
+				res[t,k] = f(t, k)
 		return res
 
 
-	def gradient_projection(self,u):
-		a = lambda x : 20
-		b = lambda x : 40
 
-		f_x = u[self.nt]
-		u_prev = lambda t : sin(t)
+	def gradient_projection(self,u):
+		a = self.discretezation(lambda x,y : 1, self.nt, self.nx)
+		b = self.discretezation(lambda x,y : 40, self.nt, self.nx)
+
+		u_T = u[self.nt]
+		f_x = lambda x : x *sin(x)
+		xt = lambda t,x : t * sin(x)
+		u_prev = np.zeros([self.nt, self.nx])
 		u_next = np.zeros([self.nt, self.nx])
-		lmbd = 1.
+
+		u_prev = self.discretezation(xt, self.nt, self.nx)
+
+		alpha = 1.
 		st = 0
 
-		index = 0
+		while True:
+			v = list(u_T)
+			for index in range(0, self.nx):
+				v[index] = v[index] - f_x(self.x[index])
 
-		while index < 3:
-			direct_system = self.direct(u_prev)
-			v = direct_system[self.nt]
-			for idx in range(1, self.nx):
-				v[idx] = v[idx] - f_x[idx]
+			dj = self.conjugate(v)
 
-			conjugate_system = self.conjugate(v)
+			for t in range(self.nt):
+				for i in range(self.nx):
+					u_next[t, i] = u_prev[t, i] - alpha * 2 * dj[t][i]
+					if u_next[t,i] < a[t,i]:
+						u_next[t,i] = a[t,i]
+					if u_next[t,i] > b[t,i]:
+						u_next[t,i] = b[t,i]
 
-			printArr(conjugate_system)
+					
 
-			index = index + 1
+
 
 
 
@@ -138,14 +157,14 @@ if __name__ == '__main__':
 
 	wave = WaveEq(l, T, nx, nt)
 	res = wave.direct(f)
-	#printArr(res)
+	printArr(res)
 
 	v = res[wave.nt - 1]
 	res2 = wave.conjugate(v)
 
-	printArr(res2)
+	#printArr(res2)
 
-	#wave.gradient_projection(res)
+	wave.gradient_projection(res)
 
 	fig = plt.figure()
 	plts = []
