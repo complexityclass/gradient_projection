@@ -17,15 +17,15 @@ class WaveEq(object):
 		self.nx = nx
 		self.nt = nt
 		self.gamma = (self.dx ** 2) / (self.dt ** 2)
-		
+
 
 	def direct(self, f):
 
 		res = [[]]
 
-		u =   np.zeros(self.nx + 1)   # u_k+1
-		u_1 = np.zeros(self.nx + 1)   # u_k
-		u_2 = np.zeros(self.nx + 1)   # u_k-1
+		u =   np.zeros(self.nx)   # u_k+1
+		u_1 = np.zeros(self.nx)   # u_k
+		u_2 = np.zeros(self.nx)   # u_k-1
 
 		u_2[:] = 0
 		u_1[:] = 0
@@ -34,20 +34,21 @@ class WaveEq(object):
 		u_1[0] = f(self.t[1])
 		u_2[0] = f(self.t[2])
 
-		res.append(u_1)
 		res.append(u_2)
+		res.append(u_1)
 
 		for n in range(2, self.nt):
-			for i in range(1, self.nx):
+			u[0] = f(self.t[n])
+			for i in range(1, self.nx - 1):
 				u[i] = -u_2[i] + self.gamma * u_1[i - 1] + (2 - 2 * self.gamma) * u_1[i] + self.gamma * u_1[i + 1]
 
 			u[self.nx - 1] = u[self.nx - 2] / (self.dx + 1)
-			u[0] = f(self.t[n])
 
-			res.append(u)
-
-			u_2[:], u_1[:] = u_1, u
-
+			res.append(list(u))
+			u_2 = list(u_1)
+			u_1 = list(u)
+			#u_2[:], u_1[:] = u_1, u
+			u[:] = 0
 
 		return res
 
@@ -106,29 +107,30 @@ class WaveEq(object):
 
 
 def printArr(arr):
+	print "Arr :"
 	for row in arr:
 		str = ""
 		for element in row:
 			str = str + " " + element.__str__()
 		print str
-		print "_______________________________________________________________________"
+	print "_______________________________________________________________________"
 
 
 
 
 if __name__ == '__main__':
 
-	l = 5
-	T = 5
-	nx = 7
-	nt = 7
+	l = 20
+	T = 20
+	nx = 60
+	nt = 60
 	
 	def f(t):
 		return sin(t)
 
 	wave = WaveEq(l, T, nx, nt)
-	#res = wave.direct(f)
-	#printArr(res)
+	res = wave.direct(f)
+	printArr(res)
 
 	#u = res[wave.nt - 1]
 	#res2 = wave.conjugate(v)
@@ -137,14 +139,14 @@ if __name__ == '__main__':
 
 	#wave.gradient_projection(res)
 
-	#fig = plt.figure()
-	#plts = []
-	#plt.hold("off")
-	#for t in range(wave.nt):
-	#	p, = plt.plot(res[t][:], 'k')
-	#	plts.append([p])
-	#ani = animation.ArtistAnimation(fig, plts, interval = 500, repeat_delay = 3000)
-	#plt.show()
+	fig = plt.figure()
+	plts = []
+	plt.hold("off")
+	for t in range(wave.nt):
+		p, = plt.plot(res[t][:], 'k')
+		plts.append([p])
+	ani = animation.ArtistAnimation(fig, plts, interval = 100, repeat_delay = 300)
+	plt.show()
 
 
 
