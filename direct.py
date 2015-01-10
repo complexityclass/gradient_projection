@@ -56,24 +56,32 @@ class WaveEq(object):
 	def conjugate(self, v):
 		res = [[]]
 
-		p =   np.zeros(self.nx + 1)   # p_k+1
-		p_1 = np.zeros(self.nx + 1)   # p_k
-		p_2 = np.zeros(self.nx + 1)   # p_k-1
+		p =   np.zeros(self.nx)   # p_k+1
+		p_1 = np.zeros(self.nx)   # p_k
+		p_2 = np.zeros(self.nx)   # p_k-1
 
-		p[0] = p_1[0] = p_2[0] = 0
-		p_2[:] = v
-		p_1[:] = v
+		p_2 = list(v)
+		p_2 = [elem * -1 for elem in p_2]
+		p_1 = list(p_2)
+
+		p_1[0] = 0
+		p_2[0] = 0
 
 		res.append(p_2)
 		res.append(p_1)
 
 		for n in range(self.nt - 2, -1, -1):
+			p[0] = 0
 			for i in range(1, self.nx - 1):
 				p[i] = -p_2[i] + self.gamma * p_1[i - 1] + (2 - 2 * self.gamma) * p_1[i] + self.gamma * p_1[i + 1]
-			p[self.nx - 1] = -p[self.nx - 2] / (self.dx)
+			
+			p[self.nx - 1] = p[self.nx - 2] / (1 - self.dx)
 
-			res.append(p)
-			p_2[:], p_1[:] = p_1, p
+			res.append(list(p))
+
+			p_2 = list(p_1)
+			p_1 = list(p)
+			p[:] = 0
 
 		res = reversed(res)
 
@@ -120,22 +128,22 @@ def printArr(arr):
 
 if __name__ == '__main__':
 
-	l = 20
-	T = 20
-	nx = 60
-	nt = 60
+	l = 10
+	T = 10
+	nx = 7
+	nt = 7
 	
 	def f(t):
 		return sin(t)
 
 	wave = WaveEq(l, T, nx, nt)
 	res = wave.direct(f)
-	printArr(res)
+	#printArr(res)
 
-	#u = res[wave.nt - 1]
-	#res2 = wave.conjugate(v)
+	v = res[wave.nt - 1]
+	res2 = wave.conjugate(v)
 
-	#printArr(res2)
+	printArr(res2)
 
 	#wave.gradient_projection(res)
 
@@ -145,7 +153,7 @@ if __name__ == '__main__':
 	for t in range(wave.nt):
 		p, = plt.plot(res[t][:], 'k')
 		plts.append([p])
-	ani = animation.ArtistAnimation(fig, plts, interval = 100, repeat_delay = 300)
+	ani = animation.ArtistAnimation(fig, plts, interval = 90, repeat_delay = 3000)
 	plt.show()
 
 
